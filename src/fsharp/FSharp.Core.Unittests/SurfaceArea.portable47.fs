@@ -2738,6 +2738,7 @@ Microsoft.FSharp.Core.OptionModule: Microsoft.FSharp.Core.FSharpOption`1[T] OfNu
 Microsoft.FSharp.Core.OptionModule: Microsoft.FSharp.Core.FSharpOption`1[T] OfObj[T](T)
 Microsoft.FSharp.Core.OptionModule: Microsoft.FSharp.Core.FSharpOption`1[T] OrElseWith[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.FSharpOption`1[T]], Microsoft.FSharp.Core.FSharpOption`1[T])
 Microsoft.FSharp.Core.OptionModule: Microsoft.FSharp.Core.FSharpOption`1[T] OrElse[T](Microsoft.FSharp.Core.FSharpOption`1[T], Microsoft.FSharp.Core.FSharpOption`1[T])
+Microsoft.FSharp.Core.OptionModule: System.Collections.Generic.IEnumerable`1[T] ToSeq[T](Microsoft.FSharp.Core.FSharpOption`1[T])
 Microsoft.FSharp.Core.OptionModule: System.Nullable`1[T] ToNullable[T](Microsoft.FSharp.Core.FSharpOption`1[T])
 Microsoft.FSharp.Core.OptionModule: System.String ToString()
 Microsoft.FSharp.Core.OptionModule: System.Type GetType()

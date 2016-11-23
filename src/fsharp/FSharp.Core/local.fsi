@@ -18,10 +18,27 @@ module internal DetailedExceptions =
     val invalidArg3ArraysDifferent: arg1:string -> arg2:string -> arg3:string -> len1:int -> len2:int -> len3:int -> _
 
 /// Definitions internal for this library.
-namespace Microsoft.FSharp.Primitives.Basics 
+namespace Microsoft.FSharp.Primitives.Basics
 
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
+
+module internal IEnumerator =
+    val noReset : unit -> 'T
+    val notStarted : unit -> 'T
+    val alreadyFinished : unit -> 'T
+    val check : bool -> unit
+    val mkSeq : (unit -> System.Collections.Generic.IEnumerator<'T>) -> System.Collections.Generic.IEnumerable<'T>
+
+    [<NoEquality; NoComparison>]
+    type EmptyEnumerable<'T> =
+        | EmptyEnumerable
+        interface System.Collections.Generic.IEnumerable<'T>
+        interface System.Collections.IEnumerable
+
+    val Empty : unit -> System.Collections.Generic.IEnumerator<'T>
+    val Singleton : 'T -> System.Collections.Generic.IEnumerator<'T>
+
 
 module internal List =
     val allPairs : 'T1 list -> 'T2 list -> ('T1 * 'T2) list

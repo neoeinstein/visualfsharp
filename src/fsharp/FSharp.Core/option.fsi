@@ -174,6 +174,11 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("ToList")>]
         val toList: option:'T option -> 'T list
 
+        /// <summary>Convert the option to a sequence of length 0 or 1.</summary>
+        /// <param name="option">The input option.</param>
+        /// <returns>The result sequence.</returns>
+        [<CompiledName("ToSeq")>]
+        val toSeq: option: 'T option -> seq<'T>
 
         /// <summary>Convert the option to a Nullable value.</summary>
         /// <param name="option">The input option.</param>

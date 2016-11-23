@@ -216,3 +216,15 @@ type OptionModule() =
         let fn x = x + 3
         Assert.AreEqual(Option.map fn None, Option.bind (fn >> Some) None)
         Assert.AreEqual(Option.map fn (Some 5), Option.bind (fn >> Some) (Some 5))
+
+    [<Test>]
+    member this.ToSeq() =
+        Assert.IsFalse(Some 5 |> Option.toSeq |> Seq.isEmpty)
+        Assert.AreEqual(Some 5 |> Option.toSeq |> Seq.length, 1)
+        Assert.AreEqual(Some 5 |> Option.toSeq |> Seq.tryHead, Some 5)
+        Assert.IsFalse(Some "" |> Option.toSeq |> Seq.isEmpty)
+        Assert.AreEqual(Some "" |> Option.toSeq |> Seq.length, 1)
+        Assert.AreEqual(Some "" |> Option.toSeq |> Seq.tryHead, Some "")
+        Assert.IsTrue(None |> Option.toSeq |> Seq.isEmpty)
+        Assert.AreEqual(None |> Option.toSeq |> Seq.length, 0)
+        Assert.AreEqual(None |> Option.toSeq |> Seq.tryHead, None)

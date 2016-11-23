@@ -2,6 +2,7 @@
 
 namespace Microsoft.FSharp.Core
 
+    open Microsoft.FSharp.Primitives.Basics
     open Microsoft.FSharp.Core.Operators
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -78,6 +79,9 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("ToList")>]
         let toList option = match option with  None -> [ ] | Some x -> [ x ]
+
+        [<CompiledName("ToSeq")>]
+        let toSeq option = match option with Some x -> IEnumerator.mkSeq (fun () -> IEnumerator.Singleton x) | None -> upcast IEnumerator.EmptyEnumerable
 
         [<CompiledName("ToNullable")>]
         let toNullable option = match option with None -> System.Nullable() | Some v -> System.Nullable(v)

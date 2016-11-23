@@ -84,6 +84,62 @@ open Microsoft.FSharp.Core.ICloneableExtensions
 #else
 #endif  
 
+module internal IEnumerator =
+    let noReset() = raise (new System.NotSupportedException(SR.GetString(SR.resetNotSupported)))
+    let notStarted() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
+    let alreadyFinished() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
+    let check started = if not started then notStarted()
+
+    let mkSeq f =
+        { new IEnumerable<'U> with
+              member x.GetEnumerator() = f()
+          interface System.Collections.IEnumerable with
+              member x.GetEnumerator() = (f() :> System.Collections.IEnumerator) }
+
+    /// A concrete implementation of an enumerator that returns no values
+    [<Sealed>]
+    type EmptyEnumerator<'T>() =
+        let mutable started = false
+        interface IEnumerator<'T> with
+            member x.Current =
+                check started
+                (alreadyFinished() : 'T)
+
+        interface System.Collections.IEnumerator with
+            member x.Current =
+                check started
+                (alreadyFinished() : obj)
+            member x.MoveNext() =
+                if not started then started <- true
+                false
+            member x.Reset() = noReset()
+        interface System.IDisposable with
+            member x.Dispose() = ()
+
+    let empty<'T> () = (new EmptyEnumerator<'T>() :> IEnumerator<'T>)
+    
+    [<NoEquality; NoComparison>]
+    type EmptyEnumerable<'T> =
+        | EmptyEnumerable
+        interface IEnumerable<'T> with
+            member x.GetEnumerator() = empty<'T>()
+        interface System.Collections.IEnumerable with
+            member x.GetEnumerator() = (empty<'T>() :> System.Collections.IEnumerator)
+
+    [<Sealed>]
+    type Singleton<'T>(v:'T) =
+        let mutable started = false
+        interface IEnumerator<'T> with
+            member x.Current = v
+        interface System.Collections.IEnumerator with
+            member x.Current = box v
+            member x.MoveNext() = if started then false else (started <- true; true)
+            member x.Reset() = noReset()
+        interface System.IDisposable with
+            member x.Dispose() = ()
+
+    let singleton x = new Singleton<'T>(x) :> IEnumerator<'T>
+
 
 module internal List = 
 

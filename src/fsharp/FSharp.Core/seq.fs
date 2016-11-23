@@ -15,11 +15,8 @@ namespace Microsoft.FSharp.Collections
 
     module IEnumerator =
 
+      open Microsoft.FSharp.Primitives.Basics.IEnumerator
 
-      let noReset() = raise (new System.NotSupportedException(SR.GetString(SR.resetNotSupported)))
-      let notStarted() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
-      let alreadyFinished() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
-      let check started = if not started then notStarted()
       let dispose (r : System.IDisposable) = r.Dispose()
 
       let cast (e : IEnumerator) : IEnumerator<'T> =
@@ -34,28 +31,6 @@ namespace Microsoft.FSharp.Collections
                     match e with
                     | :? System.IDisposable as e -> e.Dispose()
                     | _ -> ()   }
-
-      /// A concrete implementation of an enumerator that returns no values
-      [<Sealed>]
-      type EmptyEnumerator<'T>() =
-          let mutable started = false
-          interface IEnumerator<'T> with
-                member x.Current =
-                  check started
-                  (alreadyFinished() : 'T)
-
-          interface System.Collections.IEnumerator with
-              member x.Current =
-                  check started
-                  (alreadyFinished() : obj)
-              member x.MoveNext() =
-                  if not started then started <- true
-                  false
-              member x.Reset() = noReset()
-          interface System.IDisposable with
-                member x.Dispose() = ()
-
-      let Empty<'T> () = (new EmptyEnumerator<'T>() :> IEnumerator<'T>)
 
       let rec tryItem index (e : IEnumerator<'T>) =
           if not (e.MoveNext()) then None
@@ -352,20 +327,6 @@ namespace Microsoft.FSharp.Collections
 
       let ofArray arr = (new ArrayEnumerator<'T>(arr) :> IEnumerator<'T>)
 
-      [<Sealed>]
-      type Singleton<'T>(v:'T) =
-          let mutable started = false
-          interface IEnumerator<'T> with
-                member x.Current = v
-          interface IEnumerator with
-              member x.Current = box v
-              member x.MoveNext() = if started then false else (started <- true; true)
-              member x.Reset() = noReset()
-          interface System.IDisposable with
-              member x.Dispose() = ()
-
-      let Singleton x = (new Singleton<'T>(x) :> IEnumerator<'T>)
-
       let EnumerateThenFinally f (e : IEnumerator<'T>) =
           { new IEnumerator<'T> with
                 member x.Current = e.Current
@@ -385,6 +346,7 @@ namespace Microsoft.FSharp.Collections
     //
     module Generator =
 
+        open Microsoft.FSharp.Primitives.Basics
         open System.Collections
         open System.Collections.Generic
 
@@ -554,22 +516,8 @@ namespace Microsoft.FSharp.Core.CompilerServices
             | null -> nullArg argName
             | _ -> ()
 
-        let mkSeq f =
-            { new IEnumerable<'U> with
-                member x.GetEnumerator() = f()
-              interface IEnumerable with
-                member x.GetEnumerator() = (f() :> IEnumerator) }
-
-        [<NoEquality; NoComparison>]
-        type EmptyEnumerable<'T> =
-            | EmptyEnumerable
-            interface IEnumerable<'T> with
-                member x.GetEnumerator() = IEnumerator.Empty<'T>()
-            interface IEnumerable with
-                member x.GetEnumerator() = (IEnumerator.Empty<'T>() :> IEnumerator)
-
         let Generate openf compute closef =
-            mkSeq (fun () -> IEnumerator.generateWhileSome openf compute closef)
+            IEnumerator.mkSeq (fun () -> IEnumerator.generateWhileSome openf compute closef)
 
         let GenerateUsing (openf : unit -> ('U :> System.IDisposable)) compute =
             Generate openf compute (fun (s:'U) -> s.Dispose())
@@ -684,7 +632,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                                     let ie = outerEnum.Current
                                     // Optimization to detect the statically-allocated empty IEnumerables
                                     match box ie with
-                                    | :? EmptyEnumerable<'T> ->
+                                    | :? IEnumerator.EmptyEnumerable<'T> ->
                                          // This one is empty, just skip, don't call GetEnumerator, try again
                                          takeOuter()
                                     | _ ->
@@ -712,7 +660,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                                (fun () -> rest resource :> seq<_>)) :> seq<_>)
 
         let mkConcatSeq (sources: seq<'U :> seq<'T>>) =
-            mkSeq (fun () -> new ConcatEnumerator<_,_>(sources) :> IEnumerator<'T>)
+            IEnumerator.mkSeq (fun () -> new ConcatEnumerator<_,_>(sources) :> IEnumerator<'T>)
 
         let EnumerateWhile (g : unit -> bool) (b: seq<'T>) : seq<'T> =
             let started = ref false
@@ -724,7 +672,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
             let finish() = (curr := None)
             mkConcatSeq
-               (mkSeq (fun () ->
+               (IEnumerator.mkSeq (fun () ->
                     { new IEnumerator<_> with
                           member x.Current = getCurr()
                        interface IEnumerator with
@@ -842,6 +790,8 @@ namespace Microsoft.FSharp.Collections
     [<RequireQualifiedAccess>]
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module Seq =
+
+        open Microsoft.FSharp.Primitives.Basics.IEnumerator
 
 #if FX_NO_ICLONEABLE
         open Microsoft.FSharp.Core.ICloneableExtensions
@@ -1238,7 +1188,7 @@ namespace Microsoft.FSharp.Collections
                 foldArraySubRight f arr 0 (len - 2) arr.[len - 1]
 
         [<CompiledName("Singleton")>]
-        let singleton x = mkSeq (fun () -> IEnumerator.Singleton x)
+        let singleton x = mkSeq (fun () -> Singleton x)
 
 
         [<CompiledName("Truncate")>]
